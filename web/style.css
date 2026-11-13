@@ -25,7 +25,6 @@
   --fill: rgba(0, 0, 0, .05);              /* botão cinza */
   --fill-2: rgba(0, 0, 0, .09);
   --track: rgba(118, 118, 128, .12);       /* trilho de controles e barras */
-  --seg-on: #ffffff;
   --line: rgba(0, 0, 0, .08);              /* linha fina */
   --line-strong: #d2d2d7;
   --field-line: rgba(0, 0, 0, .14);
@@ -98,7 +97,6 @@
     --fill: rgba(255, 255, 255, .08);
     --fill-2: rgba(255, 255, 255, .14);
     --track: rgba(118, 118, 128, .24);
-    --seg-on: #636366;
     --line: rgba(255, 255, 255, .1);
     --line-strong: #424245;
     --field-line: rgba(255, 255, 255, .16);
@@ -199,7 +197,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--action); width
 }
 .seg button:hover:not(.on) { background: var(--fill); }
 .seg button:active { transform: none; }
-.seg button.on { background: var(--seg-on); font-weight: 600; }
+.seg button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 
 /* ---------------------------------------------------------------- topo */
 .top {
@@ -300,7 +298,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--action); width
 .side section { flex: none; margin: 0; padding: 0; border: 0; }
 .side h3 { margin: 0 0 4px; padding: 0 8px; }
 .sechead { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 22px; margin-bottom: 2px; padding: 0 8px; }
-.sechead h3 { margin: 0; padding: 0; }
+.sechead h3 { margin: 0; padding: 0; white-space: nowrap; }
 .sechead .linkish { padding: 2px 4px; margin-right: -4px; font-size: 12.5px; }
 .side .muted { padding: 0 8px; font-size: 12.5px; }
 
@@ -911,7 +909,7 @@ body.remote .pc-only, body.remote .tile .explore, body.remote #vopen, body.remot
 
 /* notebooks (1001 a 1280 px): topo mais compacto, para o campo de busca não ficar espremido */
 @media (max-width: 1280px) and (min-width: 1001px) {
-  :root { --side-w: 252px; }
+  :root { --side-w: 268px; }
   .search #mode { width: 150px; }
   .qkey { display: none; }
 }
