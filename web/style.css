@@ -120,7 +120,9 @@
 
 /* ---------------------------------------------------------------- base */
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
+/* body sem altura fixa: com height 100% o topo "sticky" só ficava preso na primeira tela e sumia ao rolar */
+html { height: 100%; }
+body { margin: 0; min-height: 100%; }
 body {
   background: var(--canvas); color: var(--text);
   font: 400 14px/1.43 var(--font); letter-spacing: -.01em;
