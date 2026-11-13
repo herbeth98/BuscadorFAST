@@ -1106,3 +1106,118 @@ body.remote .pc-only, body.remote .tile .explore, body.remote #vopen, body.remot
   .vnav.next { right: 8px; }
   .vinfo { padding: 18px 16px 28px; }
 }
+
+/* ==========================================================================
+   Movimento (skill "motion")
+   · tempo: tudo abaixo de 300 ms; nunca velocidade constante (curvas de saída e de mola)
+   · entrada: um foco por vez (janela, menu, aviso), com a mola assentando depois
+   · toque: o botão achata no clique e volta com mola; feedback exagerado ao marcar
+   · frequência: a grade de fotos, usada o tempo todo, quase não anima
+   · alvos: botões pequenos têm área de clique maior que o desenho
+   ========================================================================== */
+:root {
+  --ease-out: cubic-bezier(.22, 1, .36, 1);      /* desacelera ao chegar */
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1); /* passa um pouco e assenta */
+  --t-fast: 120ms; --t-med: 200ms; --t-slow: 280ms;
+}
+
+/* botões: achatam no impacto (60 ms) e voltam com mola */
+button, .btn {
+  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out), opacity var(--t-med) var(--ease-out), transform var(--t-slow) var(--ease-spring);
+}
+button:active:not(:disabled), .btn:active { transition-duration: 60ms; }
+.vol, .cloud span, .quickdates button, .pill, .seg button, .menu button, .chip {
+  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out), transform var(--t-slow) var(--ease-spring);
+}
+.vol:active, .cloud span:active, .pill:active { transform: scale(.97); transition-duration: 60ms; }
+
+/* marcou: pequeno "pulo" que confirma (exagero só no feedback) */
+@keyframes pop { 0% { transform: scale(.7); } 60% { transform: scale(1.14); } 100% { transform: scale(1); } }
+.tile.sel .pick, .tile .star.on, .cloud span.on, .quickdates button.on, #vfav.on, .pcard.picked .ppick,
+.sortbox > button.on, .seg button.on { animation: pop var(--t-slow) var(--ease-spring); }
+
+/* janelas: fundo escurece, a caixa sobe de leve e assenta */
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes dlgIn { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes sheetUp { from { transform: translateY(100%); } }
+.dlg:not(.hidden) { animation: fadeIn var(--t-med) var(--ease-out); }
+.dlg:not(.hidden) > .dlgbox { animation: dlgIn var(--t-slow) var(--ease-spring); }
+
+/* menu Ferramentas: nasce do botão (canto de cima à direita) */
+@keyframes menuIn { from { opacity: 0; transform: translateY(-6px) scale(.94); } }
+.menu { transform-origin: top right; }
+.menu:not(.hidden) { animation: menuIn var(--t-med) var(--ease-spring); }
+
+/* aviso e barra de seleção: chegam deslizando e assentam */
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, -12px) scale(.96); } }
+@keyframes barIn { from { opacity: 0; transform: translate(-50%, 18px); } }
+.toast:not(.hidden) { animation: toastIn var(--t-slow) var(--ease-spring); }
+.selbar:not(.hidden) { animation: barIn var(--t-slow) var(--ease-spring); }
+@keyframes sobe { from { opacity: 0; transform: translateY(16px); } }
+.sharebox:not(.hidden) { animation: sobe var(--t-slow) var(--ease-spring); }
+
+/* visualizador: o fundo escurece, a foto cresce um pouco e o painel chega depois (follow through) */
+@keyframes mediaIn { from { opacity: 0; transform: scale(.96); } }
+@keyframes painelIn { from { opacity: 0; transform: translateX(18px); } }
+.viewer:not(.hidden) { animation: fadeIn var(--t-med) var(--ease-out); }
+.viewer:not(.hidden) .vmedia > * { animation: mediaIn var(--t-slow) var(--ease-out); }
+.viewer:not(.hidden) .vinfo { animation: painelIn var(--t-slow) var(--ease-out) 40ms both; }
+
+/* linha do tempo, mapa e cabeçalhos: aparecem descendo de leve; as barras crescem do chão */
+@keyframes desce { from { opacity: 0; transform: translateY(-8px); } }
+.timeline:not(.hidden), .mapbox:not(.hidden), .collhead:not(.hidden), .revhead:not(.hidden), .job:not(.hidden) {
+  animation: desce var(--t-slow) var(--ease-out);
+}
+@keyframes cresce { from { transform: scaleY(0); } }
+.tl-bar i { transform-origin: bottom; animation: cresce var(--t-slow) var(--ease-out); }
+/* as pílulas de filtro são redesenhadas a cada busca: sem animação (frequência) */
+.job .prog i { transition: width var(--t-slow) var(--ease-out); }
+
+/* grade (usada o tempo todo): só o zoom ao passar o mouse; a busca rápida não pisca */
+.tile img { transition: transform var(--t-slow) var(--ease-out), opacity var(--t-med) var(--ease-out); }
+.grid { transition: opacity var(--t-med) var(--ease-out); }
+.grid.loading { transition-delay: 150ms; }  /* resposta em menos de 150 ms nem chega a apagar a grade */
+.tile .explore, .tile .star, .tile .pick, .tile .cap { transition-duration: var(--t-med); transition-timing-function: var(--ease-out); }
+
+/* área de clique maior que o desenho */
+.iconbtn, button.linkish { position: relative; }
+.iconbtn::after, .close::after, .tile .pick::after, .vnav::after, button.linkish::after {
+  content: ""; position: absolute; inset: -6px;
+}
+.tile .explore::after, .tile .star::after { content: ""; position: absolute; inset: -3px; }
+button.linkish::after { inset: -6px -4px; }
+
+/* celular: as folhas sobem do rodapé */
+@media (max-width: 800px) {
+  .dlg.sheet:not(.hidden) > .dlgbox { animation: sheetUp var(--t-slow) var(--ease-out); }
+  body.show-filters .side { animation: sobe var(--t-slow) var(--ease-out); }
+  @keyframes barInMobile { from { transform: translateY(100%); } }
+  .selbar:not(.hidden) { animation: barInMobile var(--t-slow) var(--ease-out); }
+  @keyframes toastInMobile { from { opacity: 0; transform: translate(-50%, 12px) scale(.96); } }
+  .toast:not(.hidden) { animation: toastInMobile var(--t-slow) var(--ease-spring); }
+}
+
+/* "reduzir movimento" no sistema (no Windows: Efeitos de animação desligados): nada desliza, cresce ou pula;
+   as entradas viram só um esmaecimento curto */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes dlgIn { from { opacity: 0; } }
+  @keyframes menuIn { from { opacity: 0; } }
+  @keyframes toastIn { from { opacity: 0; } }
+  @keyframes toastInMobile { from { opacity: 0; } }
+  @keyframes barIn { from { opacity: 0; } }
+  @keyframes barInMobile { from { opacity: 0; } }
+  @keyframes sobe { from { opacity: 0; } }
+  @keyframes sheetUp { from { opacity: 0; } }
+  @keyframes mediaIn { from { opacity: 0; } }
+  @keyframes painelIn { from { opacity: 0; } }
+  @keyframes desce { from { opacity: 0; } }
+  @keyframes cresce { from { opacity: 0; } }
+  @keyframes pop { from { opacity: .55; } }
+  button, .btn, .vol, .cloud span, .pill, .tile img { transition-property: background-color, color, border-color, opacity; }
+  button:active:not(:disabled), .btn:active, .vol:active, .cloud span:active, .pill:active { transform: none; }
+  .tile:hover img { transform: none; }
+  #micBtn.rec { animation: none; }
+}
