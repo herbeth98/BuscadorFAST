@@ -1,0 +1,20 @@
+# PyTorch com CUDA 12.8 (RTX série 50):
+#   uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+transformers>=4.49
+sentencepiece
+protobuf
+fastapi
+uvicorn[standard]
+pillow
+pillow-heif
+rawpy
+numpy
+onnxruntime-gpu==1.23.2   # versão para CUDA 12, igual à do PyTorch
+opencv-python-headless
+easyocr
+qrcode
+python-multipart
+watchdog
+faster-whisper   # depois de instalar, reinstale onnxruntime-gpu==1.23.2: ele traz o onnxruntime de CPU junto
+# Modelos de rosto: models/buffalo_l.zip
+#   https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip

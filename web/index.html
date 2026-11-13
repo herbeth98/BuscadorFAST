@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d1d1f" media="(prefers-color-scheme: dark)">
+<title>BuscadorFAST</title>
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icone-simples.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top" id="top">
+  <div class="brand"><img class="brand-ico" src="icone-simples.svg" srcset="icone-simples.svg 1x, icone.svg 2x" alt="" width="30" height="30"><span>Buscador<b>FAST</b></span></div>
+  <form id="searchForm" class="search" role="search">
+    <div class="qbox">
+      <span class="qicon" aria-hidden="true"></span>
+      <input id="q" type="search" autocomplete="off" autofocus aria-label="Buscar"
+             placeholder="Buscar: “criança na praia”, “bolo de aniversário”…">
+      <kbd class="qkey" title="Atalho: tecla / para buscar">/</kbd>
+      <button type="button" id="micBtn" class="iconbtn mic" title="Buscar falando" aria-label="Buscar falando">🎤</button>
+      <label class="iconbtn photo-search" title="Buscar uma pessoa pelo rosto: envie uma foto dela (ou arraste/cole na tela)" aria-label="Buscar pessoa por foto">📷
+        <input id="photoInput" type="file" accept="image/*" hidden></label>
+    </div>
+    <select id="mode" title="Onde procurar" aria-label="Onde procurar">
+      <option value="auto">Em tudo</option>
+      <option value="texto">Só palavras exatas</option>
+      <option value="escrito">Texto escrito na foto</option>
+      <option value="falado">Falado nos vídeos</option>
+      <option value="som">Sons nos vídeos</option>
+    </select>
+  </form>
+  <div id="dropHint" class="drop-hint hidden">Solte a foto para achar essa pessoa pelo rosto</div>
+  <nav class="topnav" aria-label="Ferramentas">
+    <button id="btnPeople" class="ghost" title="Pessoas">Pessoas</button>
+    <button id="btnXfer" class="ghost" title="Transferir arquivos entre o PC e o celular">Transferir</button>
+    <div class="menuwrap pc-only">
+      <button id="btnTools" class="ghost" title="Ferramentas" aria-haspopup="true" aria-expanded="false">Ferramentas</button>
+      <div id="toolsMenu" class="menu hidden" role="menu">
+        <button id="btnIndex" role="menuitem"><b>Indexar discos</b><small>Atualizar os discos e ver o que falta</small></button>
+        <button id="btnDupes" role="menuitem"><b>Duplicados e lixeira</b><small>Liberar espaço</small></button>
+        <button id="btnHealthTop" role="menuitem"><b>Saúde dos discos</b><small>Estado e teste de leitura</small></button>
+      </div>
+    </div>
+    <button id="btnSettings" class="ghost sq pc-only" title="Configurações, celular e backup" aria-label="Configurações"><i id="settingsDot" class="dot-alert hidden"></i></button>
+    <button id="btnQuit" class="ghost sq pc-only" title="Fecha o BuscadorFAST (para abrir de novo, use o atalho)" aria-label="Fechar o programa"></button>
+  </nav>
+  <div class="modechips" id="modeChips" role="radiogroup" aria-label="Onde procurar">
+    <button type="button" data-mode="auto" class="on">Em tudo</button>
+    <button type="button" data-mode="texto">Palavras exatas</button>
+    <button type="button" data-mode="escrito">Escrito na foto</button>
+    <button type="button" data-mode="falado">Falado</button>
+    <button type="button" data-mode="som">Sons</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="side" id="side" aria-label="Filtros">
+    <div class="sheethead">
+      <b>Filtros</b>
+      <button id="filtersReset" class="linkish">Limpar</button>
+      <button id="filtersClose" class="ghost sq" aria-label="Fechar filtros">✕</button>
+    </div>
+    <section class="marks">
+      <div class="sechead"><h3>Minhas marcações</h3><button id="btnNewColl" class="linkish">＋ Nova coleção</button></div>
+      <div id="favEntry" class="vol coll"><span class="ico" aria-hidden="true"></span><span class="name">Favoritos</span><small id="favCount">0</small></div>
+      <div id="reviewEntry" class="vol coll" title="Fotos borradas, escuras, estouradas ou repetidas, para você decidir"><span class="ico" aria-hidden="true"></span><span class="name">Para revisar</span><small id="reviewCount">0</small></div>
+      <div id="albumsEntry" class="vol coll" title="Fotos e vídeos do mesmo dia e lugar, juntados sozinhos"><span class="ico" aria-hidden="true"></span><span class="name">Álbuns automáticos</span></div>
+      <div id="collList"></div>
+    </section>
+    <section id="sidePeople">
+      <div class="sechead"><h3>Pessoas</h3><button id="sidePeopleAdd" class="linkish">Escolher pessoas…</button></div>
+      <div id="sidePeopleList" class="chips"></div>
+      <div id="sidePeopleMode" class="seg pmode hidden" role="radiogroup" aria-label="Como combinar">
+        <button data-pm="juntas" class="on" title="Todas na mesma foto">Juntas</button>
+        <button data-pm="qualquer" title="Pelo menos uma delas">Qualquer</button>
+        <button data-pm="so" title="Juntas, sem outras pessoas com nome">Só elas</button>
+      </div>
+    </section>
+    <section>
+      <div class="sechead"><h3>Discos</h3><button id="btnHealth" class="linkish">Saúde dos discos <span id="healthBadge"></span></button></div>
+      <div id="volumes"></div>
+      <label class="check"><input type="checkbox" id="onlyOnline"> Só discos conectados</label>
+    </section>
+    <section>
+      <h3>Data</h3>
+      <div class="quickdates" id="quickDates">
+        <button data-range="30">30 dias</button>
+        <button data-range="month">Este mês</button>
+        <button data-range="year">Este ano</button>
+        <button data-range="lastyear">Ano passado</button>
+      </div>
+      <div class="dates">
+        <label>De <input type="date" id="dateFrom"></label>
+        <label>Até <input type="date" id="dateTo"></label>
+      </div>
+    </section>
+    <section class="inline">
+      <h3><label for="camera">Câmera</label></h3>
+      <select id="camera"><option value="">Todas</option></select>
+    </section>
+    <section class="tags">
+      <div class="sechead"><h3>Palavras-chave</h3><button id="tagMore" class="linkish hidden">Ver todas</button></div>
+      <input id="tagFilter" class="tagfilter" type="search" placeholder="Filtrar palavras…" aria-label="Filtrar palavras-chave">
+      <div id="tagCloud" class="cloud collapsed"></div>
+    </section>
+    <div class="sheetfoot"><button id="filtersApply">Ver resultados</button></div>
+  </aside>
+
+  <main>
+    <div class="bar">
+      <div class="barleft">
+        <span id="count" class="count" aria-live="polite"></span>
+        <div id="activeFilters"></div>
+        <button id="clearAll" class="linkish hidden">Limpar filtros</button>
+      </div>
+      <div class="sortbox">
+        <div class="seg" id="kindSeg" role="group" aria-label="Tipo de arquivo">
+          <button data-kind="" class="on">Tudo</button>
+          <button data-kind="image">Fotos</button>
+          <button data-kind="video">Vídeos</button>
+          <button data-kind="screenshot" title="Capturas de tela (prints)">Prints</button>
+        </div>
+        <button id="btnTimeline" class="ghost" title="Ver quantos arquivos há em cada ano, mês e dia"><span class="lbl">Linha do tempo</span></button>
+        <button id="btnMap" class="ghost" title="Fotos e vídeos com localização num mapa"><span class="lbl">Mapa</span></button>
+        <button id="btnSelectAll" class="ghost hidden"></button>
+        <button id="btnSelect" class="ghost" title="Selecionar vários arquivos para importar no Premiere ou dar palavras-chave"><span class="lbl">Selecionar</span></button>
+        <select id="sort" title="Ordenar" aria-label="Ordenar">
+          <option value="relevancia">Mais relevantes</option>
+          <option value="data_desc">Mais recentes</option>
+          <option value="data_asc">Mais antigas</option>
+          <option value="modificado_desc">Modificados por último</option>
+          <option value="modificado_asc">Modificados há mais tempo</option>
+          <option value="adicionado_desc">Adicionados por último</option>
+          <option value="nome_asc">Nome (A–Z)</option>
+          <option value="tamanho_desc">Maiores arquivos</option>
+          <option value="duracao_desc">Vídeos mais longos</option>
+        </select>
+      </div>
+    </div>
+    <section id="mapBox" class="mapbox hidden" aria-label="Mapa">
+      <div class="map-head">
+        <span id="mapInfo" class="muted small"></span>
+        <button id="mapArea" class="ghost">Mostrar só desta área</button>
+      </div>
+      <div id="map"></div>
+    </section>
+    <section id="timeline" class="timeline hidden" aria-label="Linha do tempo">
+      <div class="tl-head">
+        <nav id="tlCrumbs" class="tl-crumbs"></nav>
+        <span id="tlInfo" class="muted small"></span>
+      </div>
+      <div id="tlChart" class="tl-chart" role="list"></div>
+      <div id="tlTip" class="tl-tip hidden" role="tooltip"></div>
+    </section>
+    <div id="reviewHead" class="revhead hidden">
+      <b>Para revisar</b>
+      <span id="reviewInfo"></span>
+      <span class="small">Use ☑ Selecionar → <b>✓ Manter</b> (sai da lista) ou <b>🗑 Lixeira</b> (dá para restaurar em Duplicados → Lixeira).</span>
+    </div>
+    <div id="collHead" class="collhead hidden">
+      <span class="ico" aria-hidden="true"></span>
+      <div class="t"><b id="collName"></b><small id="collInfo" class="muted"></small></div>
+      <button id="collPremiere">Importar coleção no Premiere</button>
+      <button id="collXmp" class="ghost pc-only" title="Grava nomes e palavras-chave nos arquivos desta coleção">Gravar no arquivo</button>
+      <button id="collRename" class="ghost">Renomear</button>
+      <button id="collDelete" class="ghost danger" title="Apaga só a coleção; os arquivos continuam onde estão">Excluir coleção</button>
+    </div>
+    <div id="jobBar" class="job hidden"></div>
+    <div id="grid" class="grid"></div>
+    <div id="more" class="more hidden"><button class="ghost">Carregar mais</button></div>
+    <div id="empty" class="empty hidden"></div>
+  </main>
+</div>
+
+<nav id="bottomNav" class="bottomnav" aria-label="Navegação">
+  <button data-nav="home" class="on"><span aria-hidden="true"></span>Início</button>
+  <button data-nav="filters"><span aria-hidden="true"></span>Filtros<i id="filterBadge" class="nbadge hidden"></i></button>
+  <button data-nav="people"><span aria-hidden="true"></span>Pessoas</button>
+  <button data-nav="albums"><span aria-hidden="true"></span>Álbuns</button>
+  <button data-nav="more"><span aria-hidden="true"></span>Mais</button>
+</nav>
+<div id="moreSheet" class="dlg sheet hidden">
+  <div class="dlgbox">
+    <button class="close" data-close aria-label="Fechar">×</button>
+    <h2>Mais</h2>
+    <div class="morelist">
+      <button data-go="fav"><span aria-hidden="true"></span><b>Favoritos</b></button>
+      <button data-go="review"><span aria-hidden="true"></span><b>Para revisar</b><small>Fotos borradas, escuras ou repetidas</small></button>
+      <button data-go="xfer"><span aria-hidden="true"></span><b>Transferir</b><small>Entre o PC e o celular</small></button>
+      <button data-go="timeline"><span aria-hidden="true"></span><b>Linha do tempo</b></button>
+      <button data-go="map"><span aria-hidden="true"></span><b>Mapa</b></button>
+    </div>
+  </div>
+</div>
+
+<div id="selBar" class="selbar hidden">
+  <span id="selCount"></span>
+  <button id="bulkPremiere" title="Importa os selecionados no projeto aberto no Premiere">Importar no Premiere</button>
+  <button id="bulkKeep" class="ghost review-only hidden" title="Sai da revisão e não volta">✓ Manter</button>
+  <button id="bulkReviewTrash" class="danger-solid review-only hidden pc-only" title="Vai para a lixeira do BuscadorFAST (dá para restaurar)">Lixeira</button>
+  <button id="bulkToPhone" class="ghost pc-only" title="Põe os selecionados na caixa do celular, para baixar lá">Para o celular</button>
+  <button id="bulkDown" class="ghost" title="Baixa os selecionados (vários vêm num .zip)">Baixar</button>
+  <button id="bulkFav" class="ghost" title="Marca os selecionados como favoritos">Favoritar</button>
+  <select id="bulkColl" title="Põe os selecionados numa coleção"></select>
+  <button id="bulkXmp" class="ghost pc-only" title="Grava nomes e palavras-chave nos arquivos (Lightroom/Premiere)">Gravar no arquivo</button>
+  <button id="bulkUncoll" class="ghost hidden" title="Tira os selecionados desta coleção (os arquivos continuam onde estão)">Tirar da coleção</button>
+  <input id="bulkTag" placeholder="Palavra-chave para os selecionados">
+  <button id="bulkAdd" class="ghost">Adicionar</button>
+  <button id="selClear" class="ghost">Cancelar</button>
+</div>
+
+<div id="viewer" class="viewer hidden">
+  <button id="vcloseTop" class="vclose-top" aria-label="Fechar">✕</button>
+  <div class="vmedia" id="vmedia"></div>
+  <button id="vprev" class="vnav prev" aria-label="Anterior (seta para a esquerda)" title="Anterior (←)">‹</button>
+  <button id="vnext" class="vnav next" aria-label="Próximo (seta para a direita)" title="Próximo (→)">›</button>
+  <div class="vinfo">
+    <button class="close" id="vclose" title="Fechar (Esc)">×</button>
+    <h2 id="vname"></h2>
+    <div class="vmark">
+      <button id="vfav" class="ghost" title="Favoritar (tecla F)">☆ Favoritar</button>
+      <select id="vcollAdd" title="Pôr numa coleção"></select>
+    </div>
+    <div id="vcolls" class="chips"></div>
+    <div id="vpath" class="path"></div>
+    <p id="vdesc" class="vdesc hidden" title="Descrição feita pela IA"></p>
+    <dl id="vmeta" class="meta"></dl>
+    <div id="vfacesWrap">
+      <h3>Pessoas nesta foto</h3>
+      <div id="vfaces" class="vfaces"></div>
+    </div>
+    <h3>Palavras-chave</h3>
+    <div id="vtags" class="chips"></div>
+    <div id="vsoundsWrap" class="hidden">
+      <h3>Sons do vídeo</h3>
+      <div id="vsounds" class="chips sounds"></div>
+    </div>
+    <div id="vspeechWrap" class="hidden">
+      <h3>Fala do vídeo <span class="muted" id="vspeechInfo"></span></h3>
+      <div id="vspeech" class="speech"></div>
+    </div>
+    <div id="vocrWrap" class="hidden">
+      <h3>Texto escrito na foto</h3>
+      <p id="vocr" class="ocr"></p>
+    </div>
+    <form id="vtagForm" class="addtag">
+      <input id="vtagInput" placeholder="Nova palavra-chave + Enter" list="tagList">
+      <datalist id="tagList"></datalist>
+    </form>
+    <div class="actions">
+      <a id="vdown" class="btn" download>Baixar</a>
+      <a id="vdownJpg" class="btn ghost hidden" download title="Prévia em alta resolução gravada pela câmera, abre em qualquer celular">Baixar JPG</a>
+      <button id="vopen">Abrir arquivo</button>
+      <button id="vfolder" class="ghost">Mostrar no Explorer</button>
+      <button id="vsimilar" class="ghost">Achar parecidos</button>
+      <button id="vpremiere" class="ghost" title="Importa este arquivo no projeto aberto no Premiere">Enviar para o Premiere</button>
+      <button id="vxmp" class="ghost pc-only" title="Grava nomes e palavras-chave neste arquivo (Lightroom/Premiere)">Gravar no arquivo</button>
+      <button id="vpremiereCut" class="ghost hidden" title="Importa o vídeo e cria subclipes nos trechos em que a frase é dita">Só os trechos falados</button>
+    </div>
+    <div id="vframes" class="frames"></div>
+  </div>
+</div>
+
+<div id="indexDlg" class="dlg hidden">
+  <div class="dlgbox">
+    <button class="close" data-close>×</button>
+    <h2>Indexar discos e pastas</h2>
+
+    <div class="upd">
+      <button id="btnUpdateAll">🔄 Atualizar todos os discos</button>
+      <p class="muted small">Percorre os discos marcados, um depois do outro, procurando arquivos novos, alterados e apagados — e depois faz tudo o que estiver pendente (palavras-chave, rostos, texto, fala). Ideal para deixar rodando de madrugada.</p>
+      <div id="updRoots" class="updroots"></div>
+      <p id="watchInfo" class="muted small watch"></p>
+    </div>
+
+    <h3 class="sec">Ou um disco / pasta específico</h3>
+    <p class="muted small">Só arquivos novos ou alterados são lidos.</p>
+    <div id="drives" class="drives"></div>
+    <form id="pathForm" class="pathform">
+      <input id="pathInput" placeholder="Ex.: E:\Fotos  ou  I:\">
+      <button>Indexar</button>
+    </form>
+
+    <h3 class="sec">O que ainda falta</h3>
+    <div id="pendList" class="pend"></div>
+    <div class="row">
+      <button id="btnPending">Processar tudo que está pendente</button>
+      <button id="btnCancel" class="ghost danger">■ Parar tarefa</button>
+    </div>
+    <div id="jobDetail" class="muted"></div>
+    <details class="adv">
+      <summary class="muted small">Avançado</summary>
+      <div class="row"><button id="btnRedo" class="ghost">Refazer palavras-chave da IA de todos os arquivos</button></div>
+      <p class="muted small">Use depois de mudar o vocabulário da IA. As palavras-chave que você colocou são mantidas.</p>
+    </details>
+  </div>
+</div>
+
+<div id="peopleDlg" class="dlg hidden">
+  <div class="dlgbox wide">
+    <button class="close" data-close>×</button>
+    <div id="peopleMain">
+      <h2>Pessoas</h2>
+      <p class="muted">Dê nome a um grupo de rostos uma vez: todas as fotos e vídeos dele passam a ser encontrados pelo nome. Usar o mesmo nome em dois grupos junta os dois.</p>
+      <div id="combineBar" class="combine">
+        <div class="combine-hint">👥 <b>Combinar pessoas:</b> marque o ✓ de duas ou mais para achar as fotos em que aparecem.</div>
+        <div class="combine-sel hidden">
+          <div id="combineNames" class="chips"></div>
+          <div class="seg pmode" id="combineMode" role="radiogroup" aria-label="Como combinar">
+            <button data-pm="juntas" class="on" title="Todas as pessoas marcadas aparecem na mesma foto">Juntas</button>
+            <button data-pm="qualquer" title="Aparece pelo menos uma das pessoas marcadas">Qualquer uma</button>
+            <button data-pm="so" title="Juntas, e nenhuma outra pessoa com nome na foto">Só elas</button>
+          </div>
+          <div class="combine-go">
+            <span id="combineCount" class="muted" aria-live="polite"></span>
+            <button id="combineClear" class="ghost">Limpar</button>
+            <button id="combineShow">Ver fotos e vídeos</button>
+          </div>
+        </div>
+      </div>
+      <div id="peopleNamed" class="faces-grid"></div>
+      <h3 class="sec">Rostos sem nome</h3>
+      <div id="peopleGroups" class="faces-grid"></div>
+      <div class="row"><button id="btnFaces" class="ghost">Procurar rostos nos arquivos pendentes</button></div>
+    </div>
+    <div id="peopleDetail" class="hidden">
+      <button id="pdBack" class="ghost">← Voltar</button>
+      <form id="pdNameForm" class="pathform">
+        <input id="pdName" placeholder="Nome da pessoa" list="peopleList">
+        <button>Salvar nome</button>
+      </form>
+      <datalist id="peopleList"></datalist>
+      <p class="muted">Clique nos rostos para selecionar.</p>
+      <div class="row">
+        <button id="pdShow" class="ghost">Ver fotos e vídeos</button>
+        <button id="pdNotHer" class="ghost">Não é essa pessoa</button>
+        <button id="pdNameSel" class="ghost">Dar outro nome aos selecionados</button>
+        <button id="pdIgnore" class="ghost danger">Ignorar</button>
+      </div>
+      <div id="pdFaces" class="faces-grid small"></div>
+    </div>
+  </div>
+</div>
+
+<div id="dupesDlg" class="dlg hidden">
+  <div class="dlgbox wide">
+    <button class="close" data-close>×</button>
+    <h2>Duplicados</h2>
+    <p class="muted">Arquivos idênticos byte a byte, em qualquer disco. Os marcados vão para a <b>lixeira do BuscadorFAST</b> (uma pasta no mesmo disco): dá para restaurar, e o espaço só é liberado ao esvaziar. Sempre fica pelo menos uma cópia.</p>
+    <div class="dupes-head">
+      <div id="dupesSummary" class="dupes-sum"></div>
+      <button id="dupesFind">Procurar duplicados</button>
+    </div>
+    <div class="row dupes-opts">
+      <label>Manter de preferência no disco
+        <select id="dupesPrefer"><option value="">Sugestão automática</option></select>
+      </label>
+      <div class="seg" id="dupesKind">
+        <button data-kind="" class="on">Tudo</button>
+        <button data-kind="image">Fotos</button>
+        <button data-kind="video">Vídeos</button>
+      </div>
+    </div>
+    <div id="dupesList"></div>
+    <div id="dupesMore" class="more hidden"><button class="ghost">Carregar mais</button></div>
+    <div class="dupes-bar">
+      <span id="dupesSel"></span>
+      <button id="dupesTrash" class="danger-solid" disabled>Mover para a lixeira</button>
+    </div>
+    <h3 class="sec">Lixeira do BuscadorFAST</h3>
+    <div id="trashList"></div>
+  </div>
+</div>
+
+<div id="settingsDlg" class="dlg hidden">
+  <div class="dlgbox">
+    <button class="close" data-close>×</button>
+    <h2>Backup do catálogo</h2>
+    <p class="muted">Guarda em outro disco tudo o que você fez no BuscadorFAST: nomes das pessoas, palavras-chave, transcrições, miniaturas. Os seus arquivos (fotos e vídeos) não são copiados. Com o programa aberto, o backup acontece sozinho uma vez por dia.</p>
+    <div id="bkStatus" class="bk-status"></div>
+    <form id="bkForm" class="pathform">
+      <label class="muted" for="bkDest">Disco de destino</label>
+      <select id="bkDest"></select>
+      <label class="muted" for="bkKeep">Guardar</label>
+      <select id="bkKeep">
+        <option value="3">3 cópias</option><option value="7">7 cópias</option>
+        <option value="14">14 cópias</option><option value="30">30 cópias</option>
+      </select>
+      <button class="ghost">Salvar</button>
+    </form>
+    <div class="row"><button id="bkNow">Fazer backup agora</button></div>
+    <h3 class="sec">Backups guardados</h3>
+    <div id="bkList"></div>
+    <h2 class="sec2">Atualização automática</h2>
+    <p class="muted">Toda noite o Windows abre o BuscadorFAST (se estiver fechado) e roda <b>🔄 Atualizar todos os discos</b>: arquivos novos, alterados e apagados, e tudo o que estiver pendente. Na hora de parar, o que foi feito fica salvo e continua na noite seguinte. Enquanto ele trabalha, o PC não entra em suspensão; depois, volta ao normal.</p>
+    <label class="check big"><input type="checkbox" id="schedOn"> Atualizar sozinho toda noite</label>
+    <div class="row sched">
+      <label>Começar às <input type="time" id="schedStart" value="01:00"></label>
+      <label>Parar às <input type="time" id="schedStop" value="07:00"></label>
+      <button id="schedSave" class="ghost">Salvar horário</button>
+    </div>
+    <p class="muted small">O PC precisa estar ligado e com o seu usuário conectado nesse horário.</p>
+
+    <h2 class="sec2">Acesso pelo celular</h2>
+    <p class="muted">Abre o BuscadorFAST no celular conectado ao <b>mesmo Wi-Fi</b>. Só entra quem ler o QR code (ele leva uma chave secreta). Pelo celular dá para buscar, ver fotos e vídeos, favoritar, montar coleções e enviar para o Premiere do PC; apagar, mover arquivos e mudar configurações só no computador.</p>
+    <label class="check big"><input type="checkbox" id="lanOn"> Permitir acesso pelo celular</label>
+    <div id="lanBox" class="lan hidden">
+      <div id="lanQr" class="qr"></div>
+      <div class="lan-info">
+        <p>1. Aponte a câmera do celular para o QR code.<br>2. Toque no link que aparecer.</p>
+        <p class="muted small">Ou digite no navegador do celular:<br><code id="lanUrl"></code></p>
+        <p class="muted small">Na primeira vez o celular avisa que a <b>conexão não é particular</b> (o certificado é do seu próprio PC): toque em <b>Avançado → Continuar</b> (Android) ou <b>Mostrar detalhes → visitar este site</b> (iPhone). Esse endereço seguro é o que libera o <b>🎤 microfone</b> para a busca por voz.</p>
+        <p class="muted small">Endereço antigo, sem voz: <code id="lanUrlPlain"></code></p>
+        <p class="muted small">Se não abrir: o Windows pode ter mostrado um aviso do <b>Firewall</b> pedindo permissão para o “Python” — clique em <b>Permitir</b> (redes privadas).</p>
+        <button id="lanNewKey" class="ghost">Gerar nova chave</button>
+        <p class="muted small">Gera outro QR code; quem tinha o antigo perde o acesso.</p>
+      </div>
+    </div>
+    <div id="awayBox" class="away hidden">
+      <h3 class="sec">🌎 Fora de casa (Tailscale)</h3>
+      <p class="muted small">O Tailscale liga o celular ao PC por uma rede particular e criptografada, de qualquer lugar (4G, outro Wi-Fi). Só os aparelhos da <b>sua</b> conta enxergam o BuscadorFAST; nada fica aberto na internet e não é preciso mexer no roteador.</p>
+      <div id="awayBody"></div>
+    </div>
+    <p class="muted small">Para voltar um backup: feche o programa (⏻) e rode<br>
+      <code>BuscadorFAST.bat restaurar-backup "caminho do arquivo .zip"</code><br>
+      O catálogo atual é guardado antes, por segurança.</p>
+  </div>
+</div>
+
+<div id="xmpDlg" class="dlg hidden">
+  <div class="dlgbox">
+    <button class="close" data-close>×</button>
+    <h2>Gravar palavras-chave nos arquivos</h2>
+    <p class="muted" id="xmpWhat"></p>
+    <p class="muted">Grava os <b>nomes das pessoas</b> e as <b>palavras-chave que você colocou</b> no padrão XMP, que o Lightroom, o Bridge e o Premiere leem. A data dos arquivos não muda.</p>
+    <div class="xmp-opts">
+      <label class="radio"><input type="radio" name="xmpMode" value="dentro" checked>
+        <span><b>Dentro do arquivo</b> (JPG, PNG, HEIC, DNG, MP4, MOV)<br><small class="muted">O Lightroom e o Premiere leem direto. O arquivo original é modificado.</small></span></label>
+      <label class="radio"><input type="radio" name="xmpMode" value="ao_lado">
+        <span><b>Num arquivo .xmp ao lado</b><br><small class="muted">O original fica intocado, mas o Lightroom não lê .xmp de JPG.</small></span></label>
+      <label class="check"><input type="checkbox" id="xmpAi"> Incluir também as palavras-chave da IA (ovelha, gramado, céu…)</label>
+      <p class="muted small">Fotos RAW (ARW, CR2, NEF…) sempre usam o .xmp ao lado, como o Lightroom: as palavras-chave são acrescentadas sem apagar os ajustes que já estão lá. MTS, AVI e MKV também usam .xmp ao lado.</p>
+    </div>
+    <div class="row"><button id="xmpGo">Gravar</button><button class="ghost" data-close>Cancelar</button></div>
+  </div>
+</div>
+
+<div id="xferDlg" class="dlg hidden">
+  <div class="dlgbox wide">
+    <button class="close" data-close>×</button>
+    <h2>Transferir entre o PC e o celular</h2>
+
+    <section class="xfer-sec">
+      <h3 class="sec">📱 → 💻 Do celular para o PC</h3>
+      <div class="phone-only">
+        <div class="row">
+          <label class="btn pickbtn">📷 Fotos e vídeos<input id="upMedia" type="file" multiple accept="image/*,video/*" hidden></label>
+          <label class="btn ghost pickbtn">📄 Outros arquivos<input id="upAny" type="file" multiple hidden></label>
+        </div>
+      </div>
+      <p class="muted small">Chegam em <code id="xferDest"></code>, numa pasta com a data de hoje, e entram sozinhos no catálogo.</p>
+      <form id="xferDestForm" class="pathform pc-only">
+        <input id="xferDestInput" placeholder="Pasta onde os arquivos do celular chegam">
+        <button class="ghost">Mudar pasta</button>
+        <button type="button" id="xferOpen" class="ghost">📂 Abrir pasta</button>
+      </form>
+      <div id="upList" class="uplist"></div>
+      <h4 class="muted small">Recebidos recentemente</h4>
+      <div id="recvList" class="xlist"></div>
+    </section>
+
+    <section class="xfer-sec">
+      <h3 class="sec">💻 → 📱 Do PC para o celular</h3>
+      <div class="pc-only">
+        <div class="row"><button id="pickOut">📂 Escolher arquivos no PC</button></div>
+        <p class="muted small">Nada é copiado: a caixa guarda só onde o arquivo está, e o celular baixa direto de lá. Também dá para selecionar resultados da busca e usar <b>📱 Para o celular</b> na barra de baixo.</p>
+      </div>
+      <p class="phone-only muted small">Arquivos que o PC mandou para você. Toque em ⬇ para salvar no celular.</p>
+      <div id="outList" class="xlist"></div>
+    </section>
+  </div>
+</div>
+
+<div id="albumsDlg" class="dlg hidden">
+  <div class="dlgbox wide">
+    <button class="close" data-close>×</button>
+    <h2>Álbuns automáticos</h2>
+    <p class="muted">Fotos e vídeos do <b>mesmo dia e lugar</b> juntados sozinhos: pela localização (📍) quando o arquivo tem GPS, ou pela pasta (📁). Câmera e celular do mesmo evento ficam no mesmo álbum. O nome vem da pasta.</p>
+    <div id="albumsGrid" class="albums"></div>
+  </div>
+</div>
+
+<div id="healthDlg" class="dlg hidden">
+  <div class="dlgbox wide">
+    <button class="close" data-close>×</button>
+    <h2>Saúde dos discos</h2>
+    <p class="muted">O que o Windows informa de cada disco físico. Os erros são guardados de um dia para o outro: se aumentarem, aparece um aviso. Caixas USB (como as dos SSDs externos) normalmente não repassam temperatura e erros — para elas vale a saúde geral e o espaço livre.</p>
+    <div id="healthList" class="health"></div>
+    <div class="row"><button id="healthRefresh" class="ghost">Verificar de novo</button><span id="healthWhen" class="muted small"></span></div>
+    <h3 class="sec">Teste de leitura</h3>
+    <p class="muted small">Toda madrugada o programa lê os arquivos por até 3 horas, começando pelos que estão há mais tempo sem teste. Acha arquivos que <b>não leem</b> (problema no disco) ou que <b>mudaram sem ninguém mexer</b> (corrompidos), antes de você precisar deles.</p>
+    <div id="readList" class="readlist"></div>
+    <div class="row pc-only"><button id="readNow" class="ghost">Testar agora (2 horas)</button></div>
+    <div id="readErrors"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<div id="shareBox" class="sharebox hidden" role="dialog" aria-live="polite">
+  <p id="shareMsg">Preparando o arquivo…</p>
+  <div class="sharebar"><div id="shareBar"></div></div>
+  <div class="shareacts">
+    <button id="shareGo" class="hidden">📤 Salvar ou compartilhar</button>
+    <button id="shareCancel" class="ghost">Cancelar</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

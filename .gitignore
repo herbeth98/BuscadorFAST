@@ -1,0 +1,19 @@
+# Nunca vão para o GitHub: dados e chaves deste computador
+data/
+acesso-convidado.html
+.claude/
+
+# Baixados ou gerados na instalação
+.venv/
+tools/
+models/
+__pycache__/
+*.pyc
+BuscadorFAST.exe
+
+# Cópias de segurança locais
+.backup-*/
+
+# Instalador montado (vai para a página de versões, não para o código)
+dist/
+instalador/build/
