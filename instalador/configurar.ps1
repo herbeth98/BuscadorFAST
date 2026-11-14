@@ -86,7 +86,22 @@ Ok "uv pronto"
 Titulo "2/5  Instalando o Python 3.12 (só para o BuscadorFAST)"
 $py = Join-Path $venv "Scripts\python.exe"
 if (-not (Test-Path $py)) {
-    Rodar $uv @("venv", $venv, "--python", "3.12", "--clear") "não consegui instalar o Python"
+    # O uv cria um atalho de pasta (junção) "cpython-3.12-windows-x86_64-none" apontando para a versão exata.
+    # Em alguns Windows 11 essa junção é bloqueada ("ponto de montagem não confiável", erro 448), então
+    # o ambiente é criado direto na pasta real da versão, e a junção é apagada (só o atalho; o Python fica).
+    $pastaPy = Join-Path $tools "python"
+    $real = $null
+    for ($tentativa = 0; $tentativa -lt 2 -and -not $real; $tentativa++) {
+        if ($tentativa -eq 0) { & $uv python install 3.12 }
+        $real = Get-ChildItem $pastaPy -Directory -Filter "cpython-3.12.*" -ErrorAction SilentlyContinue |
+            Where-Object { -not ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -and (Test-Path (Join-Path $_.FullName "python.exe")) } |
+            Sort-Object Name -Descending | Select-Object -First 1
+    }
+    if (-not $real) { Falha "não consegui instalar o Python" }
+    Get-ChildItem $pastaPy -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint } |
+        ForEach-Object { cmd /c rmdir "$($_.FullName)" | Out-Null }
+    Rodar $uv @("venv", $venv, "--python", (Join-Path $real.FullName "python.exe"), "--clear") "não consegui criar o ambiente do Python"
 }
 Ok "Python pronto"
 
